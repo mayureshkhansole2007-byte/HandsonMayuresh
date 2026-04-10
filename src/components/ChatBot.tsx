@@ -57,7 +57,7 @@ Always:
 - Be clear and beginner-friendly
 - Ask follow-up questions before giving final advice
 - Give practical and realistic suggestions
-- Avoid vague answers
+- Avoid vague answers like "got it" or generic responses
 
 If user gives little info, ask questions first.
 ${assessmentData ? `
@@ -66,7 +66,9 @@ User Profile:
 - Skills: ${assessmentData.skills.join(', ')}
 - Education Level: ${assessmentData.educationLevel}
 - Academic Strength: ${assessmentData.academicStrength}
-` : ''}`;
+` : ''}
+
+Respond as a helpful career counselor, not a generic chatbot. Be specific and actionable.`;
 
   const generateBotResponse = async (userMessage: string): Promise<string> => {
     if (!genAI) {
@@ -77,18 +79,23 @@ User Profile:
       const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       const chat = model.startChat({
         history: messages
+          .filter(m => m.sender !== 'bot' || !m.text.includes('Hello! 👋 I\'m your professional career guidance assistant'))
+          .slice(-6) // Keep only last 6 messages to avoid token limits
           .map(m => ({
             role: m.sender === 'user' ? 'user' : 'model',
             parts: [{ text: m.text }],
           })),
         generationConfig: {
           maxOutputTokens: 300,
+          temperature: 0.7, // Add some creativity
         },
       });
 
-      const result = await chat.sendMessage(`${careerGuidancePrompt}\n\nUser: ${userMessage}`);
+      const prompt = `${careerGuidancePrompt}\n\nCurrent Phase: ${currentPhase}\n\nUser Message: ${userMessage}\n\nPlease provide specific, actionable career guidance. Avoid generic responses like "got it" or "what would you like to do next".`;
+
+      const result = await chat.sendMessage(prompt);
       const response = await result.response.text();
-      return response;
+      return response.trim();
     } catch (error) {
       console.error('Gemini API error:', error);
       return "I'm having trouble connecting to the AI service right now. Please try again in a moment.";
