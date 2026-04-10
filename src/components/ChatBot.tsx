@@ -47,7 +47,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen = true, onClose, assessmentDat
     // Context-aware responses based on current phase
     if (currentPhase === 'results' && assessmentData) {
       if (lowerMessage.includes('score') || lowerMessage.includes('result')) {
-        return `Great! Based on your assessment, you achieved a score of ${assessmentData.proficiency}%. Keep up the good work! 🎉`;
+        return `Great! Based on your assessment, I've provided you with personalized career recommendations. Check out your results above! 🎉`;
       }
       if (lowerMessage.includes('improve') || lowerMessage.includes('better')) {
         return `I'd recommend focusing on areas where you had challenges. Would you like to retake the assessment to track your progress?`;
