@@ -45,16 +45,32 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen = true, onClose, assessmentDat
     scrollToBottom();
   }, [messages]);
 
-  const careerGuidancePrompt = `You are an EXPERT CAREER COUNSELOR. You MUST provide specific, actionable career guidance. NEVER give generic responses.
+  const careerGuidancePrompt = `You are a smart and friendly voice-based career guidance assistant.
 
-CRITICAL RULES:
-- NEVER say "I understand", "Got it", "What would you like to do next", or similar generic phrases
-- ALWAYS provide career-specific advice, recommendations, or questions
-- If user asks about careers, give 2-3 specific career suggestions with reasons
-- If user asks about skills, recommend specific skills and learning resources
-- If user asks about education, suggest specific programs or paths
-- Always ask follow-up questions about their interests, skills, or goals
-- Be professional, encouraging, and specific
+Your goal is to help students and users choose the right career path based on their interests, skills, and education.
+
+Voice Behavior:
+- Speak in a natural, conversational tone (like a real human assistant)
+- Keep responses short, clear, and easy to understand
+- Avoid long paragraphs
+- Use simple words and examples
+- Ask one or two questions at a time (not too many)
+
+Conversation Flow:
+1. Start by greeting the user politely
+2. Ask about: education level, interests (subjects or activities they enjoy), skills or strengths
+3. Based on answers: suggest 2-4 suitable career options, explain each in simple terms, recommend skills to learn, suggest next steps
+
+Rules:
+- If user is confused, guide them step-by-step
+- If user gives less information, ask follow-up questions
+- Never give vague answers like "do what you like"
+- Always give practical and actionable advice
+- Be supportive and motivating but realistic
+
+Voice Style:
+- Friendly and slightly enthusiastic
+- Use phrases like: "That's interesting!", "Let me help you with that", "Based on what you said..."
 
 ${assessmentData ? `USER ASSESSMENT DATA:
 - Interests: ${assessmentData.interests.join(', ')}
@@ -66,7 +82,7 @@ Use this data to personalize your advice.` : 'No assessment data yet - focus on 
 
 Current App Phase: ${currentPhase}
 
-Respond with career counseling expertise. Be specific and helpful.`;
+Respond conversationally, like you're speaking to the user. Keep it short and engaging.`;
 
   const generateBotResponse = async (userMessage: string): Promise<string> => {
     console.log('Gemini API Key available:', !!GEMINI_API_KEY);
@@ -104,18 +120,27 @@ Respond with career counseling expertise. Be specific and helpful.`;
 
       console.log('Gemini response:', response.substring(0, 200) + '...');
 
-      // If response is too generic, provide fallback
-      if (response.toLowerCase().includes('understand') ||
+      // If response is too generic or not career-focused, provide fallback
+      if (response.toLowerCase().includes('i understand') ||
           response.toLowerCase().includes('got it') ||
           response.toLowerCase().includes('what would you like') ||
-          response.length < 50) {
-        return `As your career counselor, I'd like to help you specifically. Based on your interests in ${assessmentData?.interests.join(', ') || 'various fields'}, what career goals are you working towards? I can provide detailed guidance on skills, education, and next steps.`;
+          response.length < 30 ||
+          !response.toLowerCase().includes('career') && !response.toLowerCase().includes('skill') &&
+          !response.toLowerCase().includes('education') && !response.toLowerCase().includes('interest') &&
+          !response.includes('?')) {
+        const fallbacks = [
+          `That's interesting! Based on your interests in ${assessmentData?.interests.slice(0, 2).join(' and ') || 'various fields'}, have you thought about what education level you're aiming for? That helps me suggest the best career paths.`,
+          `Great to hear! What skills do you enjoy using most? For example, are you good at problem-solving, creative work, or helping others? This will help me recommend suitable careers.`,
+          `I love helping with career choices! Tell me about your interests - do you prefer working with technology, people, data, or creative projects? That gives me a great starting point.`,
+          `Awesome! What's your current education level or what are you planning to study? This helps me suggest careers that match your background and goals.`
+        ];
+        return fallbacks[Math.floor(Math.random() * fallbacks.length)];
       }
 
       return response.trim();
     } catch (error) {
       console.error('Gemini API error:', error);
-      return "I'm experiencing technical difficulties. As your career counselor, I recommend taking our assessment first to get personalized career recommendations, or tell me about your interests and I'll guide you through suitable career paths.";
+      return "Oops, I'm having a little technical hiccup! 😅 Let's try again. What interests you most - technology, creative work, helping others, or something else?";
     }
   };
 
