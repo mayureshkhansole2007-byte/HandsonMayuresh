@@ -94,7 +94,7 @@ Respond conversationally, like you're speaking to the user. Keep it short and en
 
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-pro',
+        model: 'gemini-1.5-flash', // Updated to more recent and reliable model
         generationConfig: {
           maxOutputTokens: 400,
           temperature: 0.7,
@@ -120,14 +120,19 @@ Respond conversationally, like you're speaking to the user. Keep it short and en
 
       console.log('Gemini response:', response.substring(0, 200) + '...');
 
+      // Format response with simple markdown support
+      const formattedResponse = response
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+        .replace(/\n/g, '<br>'); // Line breaks
+
       // If response is too generic or not career-focused, provide fallback
-      if (response.toLowerCase().includes('i understand') ||
-          response.toLowerCase().includes('got it') ||
-          response.toLowerCase().includes('what would you like') ||
-          response.length < 30 ||
-          !response.toLowerCase().includes('career') && !response.toLowerCase().includes('skill') &&
-          !response.toLowerCase().includes('education') && !response.toLowerCase().includes('interest') &&
-          !response.includes('?')) {
+      if (formattedResponse.toLowerCase().includes('i understand') ||
+          formattedResponse.toLowerCase().includes('got it') ||
+          formattedResponse.toLowerCase().includes('what would you like') ||
+          formattedResponse.length < 30 ||
+          !formattedResponse.toLowerCase().includes('career') && !formattedResponse.toLowerCase().includes('skill') &&
+          !formattedResponse.toLowerCase().includes('education') && !formattedResponse.toLowerCase().includes('interest') &&
+          !formattedResponse.includes('?')) {
         const fallbacks = [
           `That's interesting! Based on your interests in ${assessmentData?.interests.slice(0, 2).join(' and ') || 'various fields'}, have you thought about what education level you're aiming for? That helps me suggest the best career paths.`,
           `Great to hear! What skills do you enjoy using most? For example, are you good at problem-solving, creative work, or helping others? This will help me recommend suitable careers.`,
@@ -137,7 +142,7 @@ Respond conversationally, like you're speaking to the user. Keep it short and en
         return fallbacks[Math.floor(Math.random() * fallbacks.length)];
       }
 
-      return response.trim();
+      return formattedResponse;
     } catch (error) {
       console.error('Gemini API error:', error);
       return "Oops, I'm having a little technical hiccup! 😅 Let's try again. What interests you most - technology, creative work, helping others, or something else?";
