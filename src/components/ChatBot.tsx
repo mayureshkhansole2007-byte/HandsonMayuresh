@@ -45,60 +45,77 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen = true, onClose, assessmentDat
     scrollToBottom();
   }, [messages]);
 
-  const careerGuidancePrompt = `You are a professional career guidance assistant.
+  const careerGuidancePrompt = `You are an EXPERT CAREER COUNSELOR. You MUST provide specific, actionable career guidance. NEVER give generic responses.
 
-Your job is to:
-- Ask users about their interests, skills, and education
-- Suggest suitable career paths
-- Recommend skills and tools to learn
-- Provide step-by-step guidance
+CRITICAL RULES:
+- NEVER say "I understand", "Got it", "What would you like to do next", or similar generic phrases
+- ALWAYS provide career-specific advice, recommendations, or questions
+- If user asks about careers, give 2-3 specific career suggestions with reasons
+- If user asks about skills, recommend specific skills and learning resources
+- If user asks about education, suggest specific programs or paths
+- Always ask follow-up questions about their interests, skills, or goals
+- Be professional, encouraging, and specific
 
-Always:
-- Be clear and beginner-friendly
-- Ask follow-up questions before giving final advice
-- Give practical and realistic suggestions
-- Avoid vague answers like "got it" or generic responses
-
-If user gives little info, ask questions first.
-${assessmentData ? `
-User Profile:
+${assessmentData ? `USER ASSESSMENT DATA:
 - Interests: ${assessmentData.interests.join(', ')}
 - Skills: ${assessmentData.skills.join(', ')}
-- Education Level: ${assessmentData.educationLevel}
+- Education: ${assessmentData.educationLevel}
 - Academic Strength: ${assessmentData.academicStrength}
-` : ''}
 
-Respond as a helpful career counselor, not a generic chatbot. Be specific and actionable.`;
+Use this data to personalize your advice.` : 'No assessment data yet - focus on gathering information.'}
+
+Current App Phase: ${currentPhase}
+
+Respond with career counseling expertise. Be specific and helpful.`;
 
   const generateBotResponse = async (userMessage: string): Promise<string> => {
+    console.log('Gemini API Key available:', !!GEMINI_API_KEY);
+    console.log('genAI initialized:', !!genAI);
+
     if (!genAI) {
-      return "Sorry, the API is not configured. Please check your environment setup.";
+      return "⚠️ AI service temporarily unavailable. Please try again later.";
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-pro',
+        generationConfig: {
+          maxOutputTokens: 400,
+          temperature: 0.7,
+        }
+      });
+
       const chat = model.startChat({
         history: messages
-          .filter(m => m.sender !== 'bot' || !m.text.includes('Hello! 👋 I\'m your professional career guidance assistant'))
-          .slice(-6) // Keep only last 6 messages to avoid token limits
+          .filter(m => m.sender !== 'bot' || !m.text.includes('Hello! 👋'))
+          .slice(-4) // Keep only last 4 messages
           .map(m => ({
             role: m.sender === 'user' ? 'user' : 'model',
             parts: [{ text: m.text }],
           })),
-        generationConfig: {
-          maxOutputTokens: 300,
-          temperature: 0.7, // Add some creativity
-        },
       });
 
-      const prompt = `${careerGuidancePrompt}\n\nCurrent Phase: ${currentPhase}\n\nUser Message: ${userMessage}\n\nPlease provide specific, actionable career guidance. Avoid generic responses like "got it" or "what would you like to do next".`;
+      const fullPrompt = `${careerGuidancePrompt}\n\nUser's Message: "${userMessage}"\n\nProvide specific career guidance. Do not use generic responses.`;
 
-      const result = await chat.sendMessage(prompt);
+      console.log('Sending to Gemini:', fullPrompt.substring(0, 200) + '...');
+
+      const result = await chat.sendMessage(fullPrompt);
       const response = await result.response.text();
+
+      console.log('Gemini response:', response.substring(0, 200) + '...');
+
+      // If response is too generic, provide fallback
+      if (response.toLowerCase().includes('understand') ||
+          response.toLowerCase().includes('got it') ||
+          response.toLowerCase().includes('what would you like') ||
+          response.length < 50) {
+        return `As your career counselor, I'd like to help you specifically. Based on your interests in ${assessmentData?.interests.join(', ') || 'various fields'}, what career goals are you working towards? I can provide detailed guidance on skills, education, and next steps.`;
+      }
+
       return response.trim();
     } catch (error) {
       console.error('Gemini API error:', error);
-      return "I'm having trouble connecting to the AI service right now. Please try again in a moment.";
+      return "I'm experiencing technical difficulties. As your career counselor, I recommend taking our assessment first to get personalized career recommendations, or tell me about your interests and I'll guide you through suitable career paths.";
     }
   };
 
