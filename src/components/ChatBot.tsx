@@ -23,7 +23,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen = true, onClose, assessmentDat
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! 👋 I\'m your AI assistant. How can I help you today?',
+      text: 'Hello! 👋 I\'m your professional career guidance assistant. I\'m here to help you explore career paths, suggest skills to learn, and provide step-by-step guidance. What would you like to know about your career?',
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -44,82 +44,80 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen = true, onClose, assessmentDat
   const generateBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
 
-    // Context-aware responses based on current phase
+    // Career guidance prompt-based logic
+    // If user has assessment data, provide personalized guidance
     if (currentPhase === 'results' && assessmentData) {
-      if (lowerMessage.includes('score') || lowerMessage.includes('result')) {
-        return `Great! Based on your assessment, I've provided you with personalized career recommendations. Check out your results above! 🎉`;
+      if (lowerMessage.includes('career') || lowerMessage.includes('suggest') || lowerMessage.includes('recommend')) {
+        return `Based on your interests (${assessmentData.interests.join(', ')}) and skills (${assessmentData.skills.join(', ')}), I can recommend relevant career paths. Check your results dashboard above for detailed recommendations! 🎯`;
       }
-      if (lowerMessage.includes('improve') || lowerMessage.includes('better')) {
-        return `I'd recommend focusing on areas where you had challenges. Would you like to retake the assessment to track your progress?`;
+      if (lowerMessage.includes('skill') || lowerMessage.includes('learn')) {
+        return `Great question! Based on your profile, I recommend learning skills aligned with your interests. Here are practical next steps: 1) Choose a career path from your results, 2) Research the required skills, 3) Find free online courses (Coursera, Udemy), 4) Build a portfolio project. What specific skill would you like to start with? 💡`;
+      }
+      if (lowerMessage.includes('path') || lowerMessage.includes('direction')) {
+        return `Let me guide you step-by-step! First, which career from your results interests you most? Once you choose, I can provide: specific job responsibilities, required skills, recommended learning resources, and salary insights. 🚀`;
       }
     }
 
-    if (currentPhase === 'assessment') {
-      if (lowerMessage.includes('help') || lowerMessage.includes('hint')) {
-        return `You're in the middle of an assessment! Focus on answering to the best of your ability. You've got this! 💪`;
+    // Before assessment
+    if (currentPhase === 'landing' || currentPhase === 'assessment') {
+      if (lowerMessage.includes('career') || lowerMessage.includes('path') || lowerMessage.includes('job')) {
+        return `Excellent! To give you personalized career guidance, I recommend taking our assessment first. It will help me understand your interests, skills, and education level. Once complete, I can suggest suitable career paths and learning steps. Ready to start? 🎯`;
       }
+    }
+
+    // Limited information - ask follow-up questions
+    if (userMessage.length < 10) {
+      const followUps = [
+        "I'd love to help! Can you tell me more? For example: What are your main interests? What skills do you have? What's your education level? 📋",
+        "That's a start! 👀 To give you better guidance, could you share: What industries interest you? What are your strengths? What's your current education? 🎓",
+      ];
+      return followUps[Math.floor(Math.random() * followUps.length)];
+    }
+
+    // Career-related keywords
+    if (lowerMessage.includes('salary') || lowerMessage.includes('income')) {
+      return `Great practical question! Salaries vary by location, experience, and company. From your results, the recommended careers have solid growth prospects. I can provide more specific salary info once you choose a career path. Which one interests you? 💰`;
+    }
+
+    if (lowerMessage.includes('education') || lowerMessage.includes('degree') || lowerMessage.includes('bootcamp')) {
+      return `Smart thinking! Education requirements vary by career. Some need a degree, others accept bootcamp certification or self-learning. From your results, I can detail the education path for each recommended career. Which career would you like to explore? 🎓`;
+    }
+
+    if (lowerMessage.includes('step') || lowerMessage.includes('beginner')) {
+      return `Perfect! Here's my beginner-friendly roadmap: 1️⃣ Take the assessment, 2️⃣ Review career recommendations, 3️⃣ Pick one career, 4️⃣ Learn foundational skills, 5️⃣ Build projects, 6️⃣ Apply for jobs. Which step are you on? Let's break it down! 🚀`;
     }
 
     // Greeting responses
-    if (
-      lowerMessage.includes('hello') ||
-      lowerMessage.includes('hi') ||
-      lowerMessage.includes('hey')
-    ) {
-      return "Hi there! 😊 How can I assist you today?";
-    }
-
-    // Help responses
-    if (
-      lowerMessage.includes('help') ||
-      lowerMessage.includes('assistance')
-    ) {
-      return "I'm here to help! 🤝 I can guide you through assessments, answer questions, and help you learn. What do you need?";
-    }
-
-    // Assessment/Test responses
-    if (
-      lowerMessage.includes('assessment') ||
-      lowerMessage.includes('test') ||
-      lowerMessage.includes('quiz')
-    ) {
-      return "Great! You can take an assessment to evaluate your knowledge and get personalized insights. Would you like to start one?";
-    }
-
-    // How are you responses
-    if (
-      lowerMessage.includes('how') &&
-      lowerMessage.includes('you')
-    ) {
-      return "I'm doing great, thanks for asking! 🤖 I'm here to help you with any questions.";
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+      return "Hi there! 👋 I'm here to help guide your career journey. What aspect of career planning would you like to explore today?";
     }
 
     // Thank you responses
     if (lowerMessage.includes('thank') || lowerMessage.includes('thanks')) {
-      return "You're welcome! 😊 Is there anything else I can help you with?";
+      return "You're welcome! 😊 Any other career guidance questions I can help with?";
     }
 
     // Goodbye responses
     if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye') || lowerMessage.includes('see you')) {
-      return "Goodbye! Have a great day! 👋";
+      return "Goodbye! Best of luck with your career journey! 👋";
     }
 
-    // Question mark detection
+    // Question mark detection - general career guidance
     if (lowerMessage.endsWith('?')) {
       const responses = [
-        "That's a great question! 🤔 Tell me more about what you're looking to know.",
-        "Good question! 💡 I'm here to help. Can you provide more details?",
-        "Interesting! 🧠 I'd love to help. What specifically would you like to know?",
+        "Great question! 💭 Tell me more context so I can give you practical advice.",
+        "That's important! 💡 To guide you better, can you share additional details?",
+        "Good thinking! 🧠 Help me understand your situation better—what's your background and goal?",
       ];
       return responses[Math.floor(Math.random() * responses.length)];
     }
 
     // General statement responses
     const generalResponses = [
-      "I see what you mean! 💭 Can you tell me more about that?",
-      "That sounds interesting! 🎯 How can I help you with this?",
-      "Got it! 👍 What would you like to do next?",
-      "I understand! 📝 Is there something specific I can help you with?",
+      "I understand! 💭 How can I help you turn that into action? Any specific career guidance you need?",
+      "That's valuable context! 🎯 Based on this, what would you like to focus on next?",
+      "Got it! 👍 Do you want to explore specific career paths or learn about required skills?",
+      "I hear you! 📝 Would an assessment help identify the best career path for you?",
     ];
 
     return generalResponses[Math.floor(Math.random() * generalResponses.length)];
@@ -271,5 +269,3 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen = true, onClose, assessmentDat
     </>
   );
 };
-
-export default ChatBot;
